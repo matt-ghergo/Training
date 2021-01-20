@@ -1,11 +1,11 @@
 import requests
 
-# We need to download data for the Premier League since their first season until season 17/18
+# We need to download data for the Premier League from their first season up to season 17/18
 # The links are all identical but for 4 digits indicating the season (eg. the link for season 17/18 will have '1718')
 # We will first create a list of strings for each season ['9293', '9394', ...]
 
 
-# First, we create a list of numbers from 93 until 17
+# First, we create a list of numbers from 93 until 117
 seasons_1 = list(range(93, 118, 1))
 
 # Then, we turn the elements of such a list into strings and we remove the first character when above 100
@@ -16,7 +16,7 @@ for i in range(len(seasons_1)):
     else:
         continue
 
-# We do the same but for numbers from 94 to 18
+# We do the same but for numbers from 94 to 118
 seasons_2 = list(range(94, 119, 1))
 
 for i in range(len(seasons_2)):
@@ -35,6 +35,8 @@ seasons = [seasons_1[i] + seasons_2[i] for i in range(0, len(seasons_1))]
 url_list = ['https://www.football-data.co.uk/mmz4281/' + seasons[i] + '/E0.csv' for i in range(0, len(seasons))]
 
 filename_list = ['premierleague_' + seasons[i] for i in range(0, len(seasons))]
+
+# Finally, we download the files in our project directory
 
 for i in range(len(seasons)):
     url = url_list[i]
