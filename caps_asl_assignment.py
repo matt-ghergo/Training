@@ -93,6 +93,7 @@ if __name__ == "__main__":
     no_cap = len(list_cap)
     print(no_cap)
 
+
 # By printing list_cap you can read the list of caps for which it is sufficient to ask the first four digits to
 # univocally determine the ASL they refer to.
 # If you wanna know for how many CAPs asking the first four digits is sufficient, all one needs to do is to print no_cap
