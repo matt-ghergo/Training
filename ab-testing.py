@@ -5,6 +5,7 @@ from bsp_bq.pandas import read_gbq
 from datetime import datetime
 from uncertainties import unumpy
 import plotly.graph_objects as go
+import scipy.stats as stats
 
 
 def query_numerator(start_date: str, end_date: str, actions_end_date: str) -> Query:
@@ -99,8 +100,8 @@ def df_num() -> pd.DataFrame:
     df_num_seg_2 = df_num[df_num.experiment_paywall_close_button == 2]
     df_num = pd.merge(df_num_seg_1, df_num_seg_2, how='outer', on='days_from_install', suffixes=('_1', '_2'))
     df_num = pd.merge(df_start(), df_num, how='inner', on='days_from_install')
-    df_num['free_trials_1'] = df_num['free_trials_1'].fillna(0)
-    df_num['free_trials_2'] = df_num['free_trials_2'].fillna(0)
+    df_num['free_trials_1'] = df_num['free_trials_1'].fillna(0).apply(int)
+    df_num['free_trials_2'] = df_num['free_trials_2'].fillna(0).apply(int)
     df_num = df_num.drop(['experiment_paywall_close_button_1', 'experiment_paywall_close_button_2'], axis=1)
     return df_num
 
@@ -205,6 +206,50 @@ def plot_cumul(df: pd.DataFrame):
     fig.show()
 
 
+def test_sample(day_from_download = None):
+    """
+    Create the samples which are needed to test if the total conversion rates are significantly different at a certain
+    day from download.
+    :param day_from_download: int
+        The day from download for which to check if the total conversion rates at that point are significantly different.
+        By default, it sets the highest number for which we have data about all downloads.
+    :return: list
+        A list with the two samples as np.array.
+    """
+    if day_from_download == None:
+        final_day = days_between(end_date, actions_end_date)
+    else:
+        final_day = day_from_download
+    total_downloads_1 = df['denominator_1'][0]
+    total_downloads_2 = df['denominator_2'][0]
+    free_trials_1 = sum(df['free_trials_1'][:final_day])
+    free_trials_2 = sum(df['free_trials_2'][:final_day])
+    sample_1 = np.array([1] * free_trials_1 + [0] * (total_downloads_1 - free_trials_1))
+    sample_2 = np.array([1] * free_trials_2 + [0] * (total_downloads_2 - free_trials_2))
+    sample = [sample_1, sample_2]
+    return sample
+
+
+def run_ttest(final_day = None):
+    """
+    Run a t-test to check if the conversion rates between two samples are significantly different.
+    :param final_day: The equivalent parameter for test_sample()
+    :return: Prints a comment about the results of the test.
+    """
+    sample_1 = test_sample(final_day)[0]
+    sample_2 = test_sample(final_day)[1]
+    conversion_1 = sum(sample_1) / len(sample_1)
+    conversion_2 = sum(sample_2) / len(sample_2)
+    if stats.ttest_ind(sample_1, sample_2, equal_var=False)[1] < 0.01:
+        print("We observe conversion rates of the " + str(conversion_1 * 100)[:5] + "% for segment 1 and of the " +
+              str(conversion_2 * 100)[:5] + "% for segment 2.\nWe can reject with a degree of confidence above the 99%"
+                                        " the hypothesis that the conversion rates are the same for the two segments.")
+    if stats.ttest_ind(sample_1, sample_2, equal_var=False)[1] >= 0.01:
+        print("We observe conversion rates of the " + str(conversion_1 * 100)[:5] + "% for segment 1 and of the " +
+              str(conversion_2 * 100)[:5] + "% for segment 2.\nYet, at a confidence level of the 99% we fail to reject "
+                                        "the hypothesis that the conversion rates are identical for the two segment.")
+
+
 if __name__ == '__main__':
     start_date = '2019-07-19'
     end_date = '2019-08-19'
@@ -212,3 +257,4 @@ if __name__ == '__main__':
     df = dataframe()
     df_with_estimates = mme_conversion(df)
     plot_cumul(df_with_estimates)
+    run_ttest()
