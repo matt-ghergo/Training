@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 
 def query_numerator(start_date: str, end_date: str, actions_end_date: str) -> Query:
     """
-    Builds a query for data about free trials started between start_date and actions_end date for people who downloaded
+    Builds a query for data about free trials started between start_date and actions_end_date for people who downloaded
     the app between start_date and end_date
     """
     return (
@@ -130,13 +130,13 @@ def running_total(df: pd.DataFrame, column: str) -> list:
 
 def running_total_inverse(df: pd.DataFrame, column: str) -> list:
     """
-    Helper function that associates to the xth day from the install, the number of downloads for which we observe that
-    day's realizations
+    Helper function that associates to each level of longevity (in days) the number of downloads for which such degree
+    of longevity is observed
     """
     list = running_total(df, column)
     runningtotal_int = []
     for n in range(days_between(start_date, actions_end_date)):
-        if n - days_between(start_date, end_date) < 0:
+        if n - days_between(end_date, actions_end_date) < 0:
             runningtotal_int.append(list[days_between(start_date, end_date) - 1])
         else:
             runningtotal_int.append(list[days_between(start_date, actions_end_date) - n - 1])
@@ -145,7 +145,7 @@ def running_total_inverse(df: pd.DataFrame, column: str) -> list:
 
 def dataframe() -> pd.DataFrame:
     """
-    Function that returns the dataframe with all the data needed for the estimation
+    Return the dataframe with all the data needed for the estimation
     """
     df = df_num()
     df_downloads = df_den()
@@ -156,7 +156,7 @@ def dataframe() -> pd.DataFrame:
 
 def mme_conversion(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Function performs the MME estimation for converstion to free trials data
+    Perform a MM estimation for the conversion to free trials
     """
     df['conversion_ft_1_n'] = df['free_trials_1'] / df['denominator_1']
     df['conversion_ft_2_n'] = df['free_trials_2'] / df['denominator_2']
@@ -173,7 +173,7 @@ def mme_conversion(df: pd.DataFrame) -> pd.DataFrame:
 
 def plot_cumul(df: pd.DataFrame):
     """
-    Plots the cumulative for the two segments of our experiment
+    Plot the cumulative for the two segments of the experiment
     """
     fig = go.Figure(
         data=go.Scatter(
